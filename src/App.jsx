@@ -11,16 +11,31 @@ import ExpenseList from './components/ExpenseList'
 import ThemeToggle from './components/ThemeToggle'
 import ConfirmModal from './components/ConfirmModal'
 import Toasts from './components/Toasts'
-import { BrowserRouter, Link, Route, Routes } from 'react-router-dom'
+import {
+  BrowserRouter,
+  Link,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+} from 'react-router-dom'
 import StatsPage from './pages/StatsPage'
 import CyclesPage from './pages/CyclesPage'
+import LoginPage from './pages/LoginPage'
 import { sortExpenses } from './utils/sorting'
 import { normalizeStoreKey, normalizeStoreName } from './utils/storeMemory'
 import { monthlyWindow11To10, toMs } from './utils/dateRanges'
 import { SUPABASE_STORAGE_KEYS } from './utils/supabaseClient'
 
-function App() {
+function AppInner() {
+  const location = useLocation()
+  const isLoginRoute = location.pathname === '/login'
+
   const [theme, setTheme] = useLocalStorageState(STORAGE_KEYS.theme, 'dark')
+  const [authSession, setAuthSession] = useLocalStorageState(
+    STORAGE_KEYS.authSession,
+    null,
+  )
   const {
     ready: dbReady,
     error: dbError,
@@ -186,6 +201,7 @@ function App() {
             onAddCategory={handleAddCategory}
             storeMemory={storeMemory}
             expenses={expenses}
+            defaultUpdaterName={authSession?.name || ''}
           />
         </div>
       </section>
@@ -243,8 +259,8 @@ function App() {
   )
 
   return (
-    <BrowserRouter basename="/callender">
-      <div className="min-h-[100svh] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-[100svh] px-4 py-6 sm:px-6 lg:px-8">
+      {!isLoginRoute ? (
         <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4">
           <div className="text-right">
             <div className="text-2xl font-semibold tracking-tight">
@@ -266,6 +282,16 @@ function App() {
             </nav>
           </div>
           <div className="flex items-center gap-2">
+            {authSession ? (
+              <button
+                type="button"
+                className="btn rounded-xl px-3 py-2 text-sm"
+                onClick={() => setAuthSession(null)}
+                title="התנתקות"
+              >
+                התנתק ({authSession?.name})
+              </button>
+            ) : null}
             <div
               className="glass rounded-xl px-3 py-2 text-sm"
               title={
@@ -315,6 +341,7 @@ function App() {
             <ThemeToggle value={theme} onChange={handleSetTheme} />
           </div>
         </header>
+      ) : null}
 
         {!dbReady ? (
           <div className="mx-auto mt-4 w-full max-w-6xl text-sm text-[color:var(--muted)]">
@@ -362,40 +389,58 @@ function App() {
         ) : null}
 
         <Routes>
-          <Route path="/" element={home} />
           <Route
-            path="/stats"
+            path="/login"
             element={
-              <StatsPage
-                expenses={expenses}
-                categories={categories}
-                budgets={budgets}
-                onBudgetsChange={setBudgets}
-                includeOtherInTotals={includeOtherInTotals}
-                onIncludeOtherInTotalsChange={setIncludeOtherInTotals}
-              />
+              authSession ? (
+                <Navigate to="/" replace />
+              ) : (
+                <LoginPage onLoggedIn={(s) => setAuthSession(s)} />
+              )
             }
           />
-          <Route
-            path="/cycles"
-            element={
-              <CyclesPage
-                expenses={expenses}
-                categories={categories}
-                includeOtherInTotals={includeOtherInTotals}
+
+          {!authSession ? (
+            <Route path="*" element={<Navigate to="/login" replace />} />
+          ) : (
+            <>
+              <Route path="/" element={home} />
+              <Route
+                path="/stats"
+                element={
+                  <StatsPage
+                    expenses={expenses}
+                    categories={categories}
+                    budgets={budgets}
+                    onBudgetsChange={setBudgets}
+                    includeOtherInTotals={includeOtherInTotals}
+                    onIncludeOtherInTotalsChange={setIncludeOtherInTotals}
+                  />
+                }
               />
-            }
-          />
-          <Route
-            path="/cycles/:startYmd"
-            element={
-              <CyclesPage
-                expenses={expenses}
-                categories={categories}
-                includeOtherInTotals={includeOtherInTotals}
+              <Route
+                path="/cycles"
+                element={
+                  <CyclesPage
+                    expenses={expenses}
+                    categories={categories}
+                    includeOtherInTotals={includeOtherInTotals}
+                  />
+                }
               />
-            }
-          />
+              <Route
+                path="/cycles/:startYmd"
+                element={
+                  <CyclesPage
+                    expenses={expenses}
+                    categories={categories}
+                    includeOtherInTotals={includeOtherInTotals}
+                  />
+                }
+              />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          )}
         </Routes>
 
         <Toasts toasts={toasts} onDismiss={removeToast} />
@@ -413,7 +458,14 @@ function App() {
             action?.()
           }}
         />
-      </div>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter basename="/callender">
+      <AppInner />
     </BrowserRouter>
   )
 }
