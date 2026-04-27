@@ -251,7 +251,7 @@ function App() {
               Expense-Control
             </div>
             <div className="text-sm text-[color:var(--muted)]">
-             ניהול הוצאות יומי בדיקה
+             ניהול הוצאות יומי בדיקה!!!
             </div>
             <nav className="mt-2 flex flex-wrap gap-2 text-sm">
               <Link className="btn rounded-xl px-3 py-2" to="/">
