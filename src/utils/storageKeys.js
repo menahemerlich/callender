@@ -6,5 +6,6 @@ export const STORAGE_KEYS = {
   storeMemory: 'expense-control.storeMemory',
   includeOtherInTotals: 'expense-control.includeOtherInTotals',
   outbox: 'expense-control.outbox',
+  authSession: 'expense-control.authSession',
 }
 

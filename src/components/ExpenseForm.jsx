@@ -9,9 +9,10 @@ export default function ExpenseForm({
   onAddCategory,
   storeMemory,
   expenses,
+  defaultUpdaterName = '',
 }) {
   const todayYmd = new Date().toISOString().slice(0, 10)
-  const [updaterName, setUpdaterName] = useState('')
+  const [updaterName, setUpdaterName] = useState(defaultUpdaterName || '')
   const [amount, setAmount] = useState('')
   const [categoryId, setCategoryId] = useState(categories?.[0]?.id || '')
   const [categoryTouched, setCategoryTouched] = useState(false)
